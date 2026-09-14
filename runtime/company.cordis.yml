@@ -1,0 +1,56 @@
+# Company policy overlay. This file contains no credentials.
+# The desktop shell supplies the employee's LiteLLM virtual key only through
+# the child process environment.
+
+- id: agent-default-model
+  config:
+    provider: deepseek-official
+    model: deepseek-v4-flash
+
+- id: llm-deepseek
+  config:
+    apiKeyEnv: DEEPSEEK_API_KEY
+    baseURL: !!js process.env.DEEPSEEK_BASE_URL
+    thinking: enabled
+    reasoningEffort: high
+    maxTokens: 65536
+    defaultContextWindow: 1000000
+    models:
+      - id: deepseek-v4-flash
+        name: DeepSeek V4 Flash
+        description: 日常问答、资料整理和并行任务
+        contextWindow: 1000000
+        maxTokens: 65536
+      - id: deepseek-v4-pro
+        name: DeepSeek V4 Pro
+        description: 编程、复杂推理和质量优先任务
+        contextWindow: 1000000
+        maxTokens: 65536
+      - id: deepseek-v4-flash-vision-exp
+        name: DeepSeek V4 Flash Vision Exp
+        description: 支持文本和图片输入的实验模型
+        contextWindow: 1000000
+        maxTokens: 65536
+        inputModalities: [text, image]
+
+- id: web-search-deepseek
+  config:
+    apiKeyEnv: DEEPSEEK_API_KEY
+    baseURL: !!js process.env.DEEPSEEK_SEARCH_BASE_URL
+    model: deepseek-v4-flash
+    maxTokens: 4096
+    maxUses: 5
+
+# Personal providers and their configuration surfaces are not part of the
+# company edition. Model selection remains available for the aliases above.
+- id: llm-pi-ai
+  disabled: true
+
+- id: ui-settings-models
+  disabled: true
+
+- id: ui-settings-plugins
+  disabled: true
+
+- id: session-telemetry-otel
+  disabled: true

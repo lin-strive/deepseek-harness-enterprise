@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "companyNameZh": "超智能战斗轮椅有限公司",
+  "productNameZh": "超智能 Harness",
+  "technicalBrandId": "SmartWheelchair",
+  "javaBasePackage": "com.smartwheelchair.harness",
+  "activationCodePrefix": "SW",
+  "installerAppId": "5EA7A052-5994-4502-B66D-84D559813C14",
+  "windowsInstallDirectory": "SmartWheelchairHarness",
+  "linuxDeployDirectory": "/opt/company-harness/litellm",
+  "colors": {
+    "logoPrimary": "#18212B",
+    "logoAccent": "#F26A21",
+    "uiAccent": "#C14E12",
+    "uiAccentHover": "#A93E0A",
+    "uiAccentTint": "#FFF4EC"
+  },
+  "assets": {
+    "generatedSource": "info/logo-generated-source.png",
+    "mark": "info/logo-v2-mark.png",
+    "horizontal": "info/logo-v2-horizontal.png"
+  }
+}

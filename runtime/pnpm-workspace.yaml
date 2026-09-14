@@ -1,0 +1,14 @@
+# Only these reviewed packages may execute dependency lifecycle scripts while
+# preparing the bundled Harness runtime.
+allowBuilds:
+  '@deepseek-ai/dsh-subprocess-local': true
+  '@google/genai': true
+  koffi: true
+  node-pty: true
+  protobufjs: true
+
+strictDepBuilds: true
+
+# Produce a relocatable node_modules tree for the Windows installer. The
+# default isolated linker creates absolute Junction targets on Windows.
+nodeLinker: hoisted

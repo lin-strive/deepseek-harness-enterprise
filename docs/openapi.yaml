@@ -1,0 +1,443 @@
+openapi: 3.1.0
+info:
+  title: Company Harness Control Plane API
+  version: 0.2.0
+  license:
+    name: Apache 2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://harness.example.com/api/v1
+    description: Example employee entry point; replace with your HTTPS endpoint
+  - url: https://admin.harness.example.com/api/v1
+    description: Example administrator entry point; restrict access in production
+paths:
+  /models:
+    get:
+      operationId: getModelCatalog
+      summary: Return enabled company models and the current default model
+      security: []
+      responses:
+        '200':
+          description: Public client model catalog
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelCatalog' }
+  /activation/preview:
+    post:
+      operationId: previewActivation
+      summary: Validate an activation code and preview the assigned employee
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationPreviewRequest'
+      responses:
+        '200':
+          description: Valid activation code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivationPreviewResponse'
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '410': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /activation/confirm:
+    post:
+      operationId: confirmActivation
+      summary: Confirm employee identity and redeem a virtual key once
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationConfirmRequest'
+      responses:
+        '200':
+          description: Activation completed; virtualKey is only returned once
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivationConfirmResponse'
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '410': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      summary: Return employee, department, activation-code and virtual-key counts
+      security: [{ basicAuth: [] }]
+      responses:
+        '200':
+          description: Management overview
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminOverview' }
+        '401': { description: Administrator authentication required }
+  /admin/models:
+    get:
+      operationId: getAdminModels
+      summary: Return the complete model catalog including disabled models
+      security: [{ basicAuth: [] }]
+      responses:
+        '200':
+          description: Administrative model catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AdminModel' }
+  /admin/models/{modelId}:
+    put:
+      operationId: updateAdminModel
+      summary: Enable or disable a model, optionally make it default, and synchronize active virtual keys
+      security: [{ basicAuth: [] }]
+      parameters:
+        - in: path
+          name: modelId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled, defaultModel]
+              properties:
+                enabled: { type: boolean }
+                defaultModel: { type: boolean }
+      responses:
+        '200': { description: Model updated and virtual-key permissions synchronized }
+        '409': { $ref: '#/components/responses/Error' }
+  /admin/employees:
+    get:
+      operationId: listAdminEmployees
+      summary: List employees and their quotas
+      security: [{ basicAuth: [] }]
+      responses:
+        '200':
+          description: Employee rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AdminEmployee' }
+        '401': { description: Administrator authentication required }
+    post:
+      operationId: createAdminEmployee
+      summary: Create one employee and assign company gateway quotas
+      security: [{ basicAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAdminEmployee' }
+      responses:
+        '201':
+          description: Created employee
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminEmployee' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { description: Administrator authentication required }
+        '409': { $ref: '#/components/responses/Error' }
+  /admin/employees/{employeeNumber}/status:
+    put:
+      operationId: changeAdminEmployeeStatus
+      summary: Enable an employee, or disable them and revoke active keys and unused activation codes
+      security: [{ basicAuth: [] }]
+      parameters:
+        - in: path
+          name: employeeNumber
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [active, disabled] }
+      responses:
+        '200':
+          description: Updated employee and revocation counts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmployeeMutation' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { description: Administrator authentication required }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /admin/employees/{employeeNumber}/access-expiry:
+    put:
+      operationId: changeAdminEmployeeAccessExpiry
+      summary: Set a future employee access expiry, or null for access until manually disabled
+      security: [{ basicAuth: [] }]
+      parameters:
+        - in: path
+          name: employeeNumber
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accessExpiresAt:
+                  type: [string, 'null']
+                  format: date-time
+      responses:
+        '200':
+          description: Updated employee
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminEmployee' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { description: Administrator authentication required }
+        '404': { $ref: '#/components/responses/Error' }
+  /admin/employees/{employeeNumber}:
+    delete:
+      operationId: deleteAdminEmployee
+      summary: Delete an employee who has never been issued a virtual key
+      security: [{ basicAuth: [] }]
+      parameters:
+        - in: path
+          name: employeeNumber
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Employee deleted }
+        '401': { description: Administrator authentication required }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /admin/employees/import:
+    post:
+      operationId: importAdminEmployees
+      summary: Insert or update employees from a UTF-8 CSV file
+      security: [{ basicAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [importedCount, employeeNumbers]
+                properties:
+                  importedCount: { type: integer }
+                  employeeNumbers: { type: array, items: { type: string } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { description: Administrator authentication required }
+  /admin/activation-codes/batch:
+    post:
+      operationId: generateAdminActivationCodes
+      summary: Generate one-time activation codes for selected employees
+      security: [{ basicAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeNumbers, expiresAt, replaceExisting]
+              properties:
+                employeeNumbers: { type: array, minItems: 1, maxItems: 500, items: { type: string } }
+                expiresAt:
+                  type: string
+                  format: date-time
+                  description: Must be in the future and no more than 90 days from the request time
+                expiresInHours:
+                  type: integer
+                  minimum: 1
+                  maximum: 2160
+                  deprecated: true
+                  description: Backward-compatible alternative to expiresAt; do not send both fields
+                replaceExisting: { type: boolean }
+      responses:
+        '200':
+          description: Plaintext activation codes; returned once only
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [codes]
+                properties:
+                  codes:
+                    type: array
+                    items: { $ref: '#/components/schemas/GeneratedActivationCode' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { description: Administrator authentication required }
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  responses:
+    Error:
+      description: Actionable error with support identifier
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  schemas:
+    ActivationPreviewRequest:
+      type: object
+      required: [activationCode, clientVersion]
+      properties:
+        activationCode: { type: string, minLength: 1, maxLength: 128 }
+        clientVersion: { type: string, minLength: 1, maxLength: 32 }
+    ActivationPreviewResponse:
+      type: object
+      required: [activationSessionId, employee, expiresAt]
+      properties:
+        activationSessionId: { type: string }
+        employee: { $ref: '#/components/schemas/Employee' }
+        expiresAt: { type: string, format: date-time }
+    ActivationConfirmRequest:
+      type: object
+      required: [activationSessionId]
+      properties:
+        activationSessionId: { type: string }
+    ActivationConfirmResponse:
+      type: object
+      required: [employee, virtualKey, gatewayBaseUrl, quota, policy]
+      properties:
+        employee: { $ref: '#/components/schemas/Employee' }
+        virtualKey: { type: string, writeOnly: true }
+        gatewayBaseUrl: { type: string, format: uri }
+        quota: { $ref: '#/components/schemas/Quota' }
+        policy:
+          type: object
+          required: [allowedModels, defaultModel, models, personalProvidersAllowed, telemetryEnabled]
+          properties:
+            allowedModels: { type: array, items: { type: string } }
+            defaultModel: { type: string }
+            models: { type: array, items: { $ref: '#/components/schemas/ModelEntry' } }
+            personalProvidersAllowed: { const: false }
+            telemetryEnabled: { const: false }
+    Employee:
+      type: object
+      required: [employeeId, employeeNumber, displayName, department]
+      properties:
+        employeeId: { type: string, format: uuid }
+        employeeNumber: { type: string }
+        displayName: { type: string }
+        department: { type: string }
+    Quota:
+      type: object
+      required: [monthlyBudgetCny, usedThisMonthCny, requestsPerMinute, tokensPerMinute, maxConcurrentRequests, resetsAt]
+      properties:
+        monthlyBudgetCny: { type: number, minimum: 0 }
+        usedThisMonthCny: { type: number, minimum: 0 }
+        requestsPerMinute: { type: integer, minimum: 1 }
+        tokensPerMinute: { type: integer, minimum: 1 }
+        maxConcurrentRequests: { type: integer, minimum: 1 }
+        resetsAt: { type: string, format: date-time }
+    ApiError:
+      type: object
+      required: [code, message, supportId]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        supportId: { type: string }
+    ModelEntry:
+      type: object
+      required: [id, name, description, experimental, inputModalities]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        experimental: { type: boolean }
+        inputModalities: { type: array, items: { type: string, enum: [text, image] } }
+    ModelCatalog:
+      type: object
+      required: [defaultModel, models]
+      properties:
+        defaultModel: { type: string }
+        models: { type: array, minItems: 1, items: { $ref: '#/components/schemas/ModelEntry' } }
+    AdminModel:
+      allOf:
+        - $ref: '#/components/schemas/ModelEntry'
+        - type: object
+          required: [enabled, defaultModel, sortOrder, updatedAt]
+          properties:
+            enabled: { type: boolean }
+            defaultModel: { type: boolean }
+            sortOrder: { type: integer }
+            updatedAt: { type: string, format: date-time }
+    AdminOverview:
+      type: object
+      required: [employeeCount, activeEmployeeCount, departmentCount, availableActivationCodeCount, activeVirtualKeyCount]
+      properties:
+        employeeCount: { type: integer }
+        activeEmployeeCount: { type: integer }
+        departmentCount: { type: integer }
+        availableActivationCodeCount: { type: integer }
+        activeVirtualKeyCount: { type: integer }
+    AdminEmployee:
+      type: object
+      required: [employeeId, employeeNumber, displayName, department, status, monthlyBudgetCny, requestsPerMinute, tokensPerMinute, maxConcurrentRequests, updatedAt]
+      properties:
+        employeeId: { type: string, format: uuid }
+        employeeNumber: { type: string }
+        displayName: { type: string }
+        department: { type: string }
+        status: { type: string, enum: [active, disabled] }
+        accessExpiresAt:
+          type: [string, 'null']
+          format: date-time
+          description: Null means access remains valid until manually disabled
+        monthlyBudgetCny: { type: number, minimum: 0, maximum: 72000 }
+        requestsPerMinute: { type: integer, minimum: 1, maximum: 600 }
+        tokensPerMinute: { type: integer, minimum: 1, maximum: 2000000 }
+        maxConcurrentRequests: { type: integer, minimum: 1, maximum: 20 }
+        updatedAt: { type: string, format: date-time }
+    CreateAdminEmployee:
+      type: object
+      required: [employeeNumber, displayName, department, status, monthlyBudgetCny, requestsPerMinute, tokensPerMinute, maxConcurrentRequests]
+      properties:
+        employeeNumber: { type: string, pattern: '^[A-Za-z0-9._-]+$', maxLength: 64 }
+        displayName: { type: string, minLength: 1, maxLength: 128 }
+        department: { type: string, minLength: 1, maxLength: 128 }
+        status: { type: string, enum: [active, disabled] }
+        accessExpiresAt:
+          type: [string, 'null']
+          format: date-time
+          description: Null means access remains valid until manually disabled
+        monthlyBudgetCny: { type: number, minimum: 0, maximum: 72000 }
+        requestsPerMinute: { type: integer, minimum: 1, maximum: 600 }
+        tokensPerMinute: { type: integer, minimum: 1, maximum: 2000000 }
+        maxConcurrentRequests: { type: integer, minimum: 1, maximum: 20 }
+    EmployeeMutation:
+      type: object
+      required: [employee, revokedActivationCodeCount, revokedVirtualKeyCount]
+      properties:
+        employee: { $ref: '#/components/schemas/AdminEmployee' }
+        revokedActivationCodeCount: { type: integer, minimum: 0 }
+        revokedVirtualKeyCount: { type: integer, minimum: 0 }
+    GeneratedActivationCode:
+      type: object
+      required: [employeeNumber, displayName, activationCode, expiresAt]
+      properties:
+        employeeNumber: { type: string }
+        displayName: { type: string }
+        activationCode: { type: string, writeOnly: true }
+        expiresAt: { type: string, format: date-time }

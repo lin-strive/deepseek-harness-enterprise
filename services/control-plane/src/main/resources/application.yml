@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: company-harness-control-plane
+  datasource:
+    url: ${CONTROL_PLANE_DATABASE_URL:jdbc:postgresql://localhost:5432/company_harness}
+    username: ${CONTROL_PLANE_POSTGRES_USER:company_harness}
+    password: ${CONTROL_PLANE_POSTGRES_PASSWORD:}
+  flyway:
+    enabled: true
+    schemas: company_harness
+    default-schema: company_harness
+    baseline-on-migrate: true
+    baseline-version: 0
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
+harness:
+  activation:
+    pepper: ${ACTIVATION_PEPPER:}
+    preview-session-minutes: 5
+  gateway:
+    admin-base-url: ${LITELLM_ADMIN_BASE_URL:http://litellm:4000}
+    public-base-url: ${LITELLM_PUBLIC_BASE_URL:http://127.0.0.1:8765/v1}
+    master-key: ${LITELLM_MASTER_KEY:}
+    cny-per-usd: ${CNY_PER_USD:7.2}
+    # Compatibility upper bound. The active catalog is stored in PostgreSQL.
+    allowed-models:
+      - deepseek-v4-flash
+      - deepseek-v4-pro
+      - deepseek-v4-flash-vision-exp
+      - company-fast
+      - company-coder
+      - company-pro
+  admin:
+    username: ${CONTROL_PLANE_ADMIN_USERNAME:admin}
+    password: ${CONTROL_PLANE_ADMIN_PASSWORD:}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ssXXX} %-5level %logger{36} - %msg%n"

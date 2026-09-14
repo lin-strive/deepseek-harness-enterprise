@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <LangVersion>latest</LangVersion>
+    <VersionPrefix>0.2.7</VersionPrefix>
+    <AssemblyVersion>0.2.7.0</AssemblyVersion>
+    <FileVersion>0.2.7.0</FileVersion>
+    <Company>超智能战斗轮椅有限公司</Company>
+    <Product>超智能 Harness</Product>
+    <Authors>超智能战斗轮椅有限公司</Authors>
+    <Description>超智能战斗轮椅有限公司内部 AI 开发工作台</Description>
+  </PropertyGroup>
+</Project>
