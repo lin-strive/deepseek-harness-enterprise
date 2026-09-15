@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="info/deepseek-harness-enterprise-logo.png" alt="DeepSeek Harness Enterprise" width="760">
+</p>
+
 # DeepSeek Harness Enterprise
 
 面向各类企业内部部署的 DeepSeek Harness 企业化封装方案。员工在 Windows 电脑本地运行 Harness，所有模型请求统一经过企业自建的 LiteLLM 网关，并通过员工独立虚拟 Key 实现用户隔离、模型权限、月度预算、RPM、TPM 和并发限制。
